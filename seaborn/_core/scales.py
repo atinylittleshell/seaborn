@@ -370,15 +370,15 @@ class ContinuousBase(Scale):
             return np.min(np.diff(np.sort(x)))
         new._spacer = spacer
 
-        # TODO How to allow disabling of legend for all uses of property?
-        # Could add a Scale parameter, or perhaps Scale.suppress()?
-        # Are there other useful parameters that would be in Scale.legend()
-        # besides allowing Scale.legend(False)?
         if prop.legend:
             axis.set_view_interval(vmin, vmax)
             locs = axis.major.locator()
             locs = locs[(vmin <= locs) & (locs <= vmax)]
             labels = axis.major.formatter.format_ticks(locs)
+            if isinstance(axis.major.formatter, ScalarFormatter):
+                offset = axis.major.formatter.get_offset()
+                if offset:
+                    labels = [f"{label} ({offset})" for label in labels]
             new._legend = list(locs), list(labels)
 
         return new
@@ -647,7 +647,7 @@ class Continuous(ContinuousBase):
             formatter = EngFormatter(unit, sep=sep)
 
         else:
-            formatter = ScalarFormatter()
+            formatter = ScalarFormatter(useOffset=mpl.rcParams['axes.formatter.useoffset'])
 
         return formatter
 
