@@ -312,6 +312,41 @@ class TestContinuous:
         with pytest.raises(TypeError, match="`like` must be"):
             s.label(like=2)
 
+    def test_legend_labels_with_offset(self, x):
+        # Test case to verify that the offset value is included in the legend labels
+        s = Continuous()._setup(x, Coordinate())
+        a = PseudoAxis(s._matplotlib_scale)
+        a.set_view_interval(0, 1)
+        locs = a.major.locator()
+        labels = a.major.formatter.format_ticks(locs)
+        if isinstance(a.major.formatter, mpl.ticker.ScalarFormatter):
+            offset = a.major.formatter.get_offset()
+            if offset:
+                labels = [f"{label} ({offset})" for label in labels]
+        assert all(f"({a.major.formatter.get_offset()})" in label for label in labels if a.major.formatter.get_offset())
+
+    def test_legend_labels_with_offset_univariate(self):
+        # Test case to verify that the offset value is included in the legend labels for univariate plots
+        x = pd.Series([1e6, 2e6, 3e6], name="x", dtype=float)
+        self.test_legend_labels_with_offset(x)
+
+    def test_legend_labels_with_offset_bivariate(self):
+        # Test case to verify that the offset value is included in the legend labels for bivariate plots
+        x = pd.Series([1e6, 2e6, 3e6], name="x", dtype=float)
+        y = pd.Series([1e6, 2e6, 3e6], name="y", dtype=float)
+        self.test_legend_labels_with_offset(x)
+        self.test_legend_labels_with_offset(y)
+
+    def test_legend_labels_with_offset_compatibility(self):
+        # Test case to verify the compatibility with mpl.rcParams['axes.formatter.useoffset'] and mpl.rcParams['axes.formatter.offset_threshold'] settings
+        x = pd.Series([1e6, 2e6, 3e6], name="x", dtype=float)
+        with mpl.rc_context({'axes.formatter.useoffset': True, 'axes.formatter.offset_threshold': 4}):
+            self.test_legend_labels_with_offset(x)
+        with mpl.rc_context({'axes.formatter.useoffset': False}):
+            self.test_legend_labels_with_offset(x)
+        with mpl.rc_context({'axes.formatter.offset_threshold': 1}):
+            self.test_legend_labels_with_offset(x)
+
 
 class TestNominal:
 
